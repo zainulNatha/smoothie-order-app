@@ -28,8 +28,8 @@ my_dataframe = session.table(
 # Convert Snowpark DataFrame to Pandas DataFrame
 pd_df = my_dataframe.to_pandas()
 
-st.dataframe(pd_df)
-st.stop()
+#st.dataframe(pd_df)
+#st.stop()
 
 #st.dataframe(data=my_dataframe, use_container_width=True)
 #st.stop()
@@ -47,29 +47,47 @@ if ingredients_list:
     ingredients_string = ''
 
     for fruit_chosen in ingredients_list:
+
         ingredients_string += fruit_chosen + ' '
 
-        st.subheader(fruit_chosen + ' Nutrition Information')
+        # Find the correct API search value for the fruit chosen
+        search_on = pd_df.loc[
+            pd_df['FRUIT_NAME'] == fruit_chosen,
+            'SEARCH_ON'
+        ].iloc[0]
 
-        smoothiefroot_response = requests.get(
-            "https://my.smoothiefroot.com/api/fruit/" + fruit_chosen
+        # Temporary check so we can see the SEARCH_ON value
+        st.write(
+            'The search value for ',
+            fruit_chosen,
+            ' is ',
+            search_on,
+            '.'
         )
 
+        # Display nutrition heading
+        st.subheader(fruit_chosen + ' Nutrition Information')
+
+        # Call the API using SEARCH_ON, not FRUIT_NAME
+        smoothiefroot_response = requests.get(
+            "https://my.smoothiefroot.com/api/fruit/" + search_on
+        )
+
+        # Display API response as a dataframe
         sf_df = st.dataframe(
             data=smoothiefroot_response.json(),
             use_container_width=True
         )
 
-    # st.write(ingredients_string)
-
+    # Build SQL statement for the smoothie order
     my_insert_stmt = """ insert into smoothies.public.orders(ingredients, name_on_order)
-                     values ('""" + ingredients_string + """','""" + name_on_order + """')"""
+                         values ('""" + ingredients_string + """','""" + name_on_order + """')"""
 
-    # st.write(my_insert_stmt)
     time_to_insert = st.button('Submit Order')
 
     if time_to_insert:
         session.sql(my_insert_stmt).collect()
+
         st.success(
             'Your Smoothie is ordered, ' + name_on_order + '!',
             icon="✅"
