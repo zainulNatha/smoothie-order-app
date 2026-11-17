@@ -2,6 +2,7 @@
 import streamlit as st
 import os
 import requests
+import pandas as pd
 from snowflake.snowpark.functions import col
 
 # Write directly to the app
@@ -24,6 +25,11 @@ my_dataframe = session.table(
     col('FRUIT_NAME'),
     col('SEARCH_ON')
 )
+# Convert Snowpark DataFrame to Pandas DataFrame
+pd_df = my_dataframe.to_pandas()
+
+st.dataframe(pd_df)
+st.stop()
 
 #st.dataframe(data=my_dataframe, use_container_width=True)
 #st.stop()
